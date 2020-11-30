@@ -1,6 +1,9 @@
+#![allow(dead_code)]
+mod oms;
 mod ttcore;
 
 fn main() {
+    /*
     let mut clock = ttcore::Clock::new();
 
     clock.start = 3;
@@ -10,4 +13,7 @@ fn main() {
     println!("{}", clock.step);
     println!("{}", ttcore::Clock::now());
     println!("{}", ttcore::Clock::format_now("%Y-%m-%d %H:%M:%S"));
+    */
+
+
 }
