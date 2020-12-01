@@ -1,0 +1,41 @@
+use crate::oms::instruments::exchange_pair::ExchangePair;
+use super::order::{Order, CriteriaLike};
+use super::trade::{TradeSide, TradeType};
+use crate::ttcore::base::TimeIndexed;
+
+struct OrderSpec {
+    id: String,
+    side: TradeSide,
+    trade_type: TradeType,
+    exchange_pair: ExchangePair,
+    criteria: Box<dyn CriteriaLike>
+}
+
+impl OrderSpec {
+    pub fn create_order(self, order: Order) -> Option<Order> {
+        let price = self.exchange_pair.price();
+        let wallet_instrument = self.side.instrument(&self.exchange_pair.pair);
+        let exchange = &self.exchange_pair.exchange;
+        // let wallet = order.portfolio.get_wallet(id, wallet_instrument);
+
+        
+        match None { // wallet.locked.get(order.path_id, None) {
+            None => return None,
+            Some(quantity) => {
+                Order::new(
+                    exchange.clock().step,
+                    self.side,
+                    self.trade_type,
+                    self.exchange_pair,
+                    quantity,
+                    // order.portfolio,
+                    price,
+                    self.criteria,
+                    order.path_id,
+                    None,
+                    order.end,
+                )
+            }
+        }
+    }
+}

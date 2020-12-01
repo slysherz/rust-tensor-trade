@@ -1,5 +1,5 @@
 extern crate chrono;
-
+use std::time::SystemTime;
 use chrono::Local;
 
 /// Tracks the time for a process
@@ -11,7 +11,6 @@ pub struct  Clock {
     pub step: i32
 }
 
-#[allow(dead_code)]
 impl Clock {
     pub fn new() -> Clock {
         Clock {
@@ -21,8 +20,8 @@ impl Clock {
     }
 
     /// Gets the current time in the default format
-    pub fn now() -> String {
-        Local::now().to_string()
+    pub fn now() -> i32 {
+        0
     }
 
     /// Gets the current time in the given format. Format options:

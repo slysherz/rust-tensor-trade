@@ -1,8 +1,9 @@
 use rust_decimal::prelude::*;
 use crate::oms::instruments::trading_pair::TradingPair;
 use std::collections::HashMap;
+use crate::ttcore::base::TimeIndexed;
 
-trait StreamLike {
+pub trait StreamLike {
     fn rename(&mut self, new_name: String);
     fn value(&self) -> f32;
 }
@@ -36,11 +37,15 @@ impl ExchangeOptions {
 }
 
 pub struct Exchange {
-    name: String,
+    pub name: String,
     // service: Arc<Service>,
-    options: ExchangeOptions,
-    price_streams: HashMap<String, Box<dyn StreamLike>>
+    pub options: ExchangeOptions,
+    pub price_streams: HashMap<String, Box<dyn StreamLike>>,
+    pub start: i32,
+    pub step: i32 
 }
+
+impl TimeIndexed for Exchange{}
 
 impl Exchange {
     pub fn quote_price(&self, trading_pair: &TradingPair) -> Decimal {

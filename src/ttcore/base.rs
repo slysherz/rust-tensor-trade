@@ -10,6 +10,9 @@ static GLOBAL_CLOCK: Clock = Clock {
 
 /// A trait for objects that are indexed by time
 pub trait TimeIndexed {
+    fn clock<'a>(&self) -> &'a Clock {
+        &GLOBAL_CLOCK
+    }
 }
 
 pub fn generate_id() -> String {

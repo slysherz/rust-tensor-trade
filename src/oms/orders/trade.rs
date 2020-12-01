@@ -1,14 +1,30 @@
-use crate::oms::instruments::exchange_pair::ExchangePair;
-use crate::oms::orders::Quantity;
+use crate::oms::instruments::{
+    exchange_pair::ExchangePair, 
+    trading_pair::TradingPair, 
+    quantity::Quantity};
+
+use crate::ttcore::base::TimeIndexed;
+use super::instruments::Instrument;
 
 pub enum TradeType {
     Limit,
     Market
 }
 
+#[derive(PartialEq)]
 pub enum TradeSide {
     Buy,
     Sell
+}
+
+impl TradeSide {
+    pub fn instrument<'a>(&self, pair: &'a TradingPair) -> &'a Instrument {
+        if self == &TradeSide::Buy {
+            &pair.base
+        } else {
+            &pair.quote
+        }
+    }
 }
 
 pub struct Trade {
@@ -21,6 +37,8 @@ pub struct Trade {
     price: f32,
     comission: Quantity
 }
+
+impl TimeIndexed for Trade {}
 
 impl Trade {
     pub fn new(

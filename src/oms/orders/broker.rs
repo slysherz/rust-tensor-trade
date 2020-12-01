@@ -23,6 +23,7 @@ impl Broker {
     /// Cancels an order
     fn cancel(&self, order: Order) -> Result<> {
         if order.status == OrderStatus::Cancelled {
+            return;
             // todo: Warn cancelled twice
         }
 

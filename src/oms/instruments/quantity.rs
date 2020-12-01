@@ -1,11 +1,8 @@
 use rust_decimal::prelude::*;
 
-use crate::ttcore::TensorTradeError;
-use crate::oms::instruments;
-use crate::oms::orders;
-use instruments::exchange_pair::ExchangePair;
-use orders::instruments::Instrument;
-
+use crate::ttcore::errors::TensorTradeError;
+use crate::oms::instruments::exchange_pair::ExchangePair;
+use crate::oms::orders::instruments::Instrument;
 
 pub struct Quantity {
     instrument: Instrument,
@@ -44,7 +41,6 @@ impl Quantity {
     }
 
     fn convert(self, exchange_pair: ExchangePair) -> Quantity {
-        // Unwrap is safe here, we already checked when we built the object
         if self.instrument == exchange_pair.pair.base {
             Quantity {
                 instrument: exchange_pair.pair.base.clone(), 
@@ -61,7 +57,11 @@ impl Quantity {
     }
 
     fn free(self) -> Quantity {
-        Quantity::new(self.instrument, self.size, "".to_string()).unwrap()
+        Quantity {
+            instrument: self.instrument, 
+            size: self.size, 
+            path_id: "".to_string()
+        }
     }
 
 
