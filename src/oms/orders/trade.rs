@@ -1,10 +1,11 @@
 use crate::oms::instruments::{
-    exchange_pair::ExchangePair, 
-    trading_pair::TradingPair, 
-    quantity::Quantity};
+    ExchangePair, 
+    TradingPair, 
+    Quantity,
+    Instrument
+};
 
 use crate::ttcore::base::TimeIndexed;
-use super::instruments::Instrument;
 
 pub enum TradeType {
     Limit,
@@ -28,14 +29,14 @@ impl TradeSide {
 }
 
 pub struct Trade {
-    order_id: String,
-    step: i32,
-    exchange_pair: ExchangePair,
-    side: TradeSide,
-    trade_type: TradeType,
-    quantity: Quantity,
-    price: f32,
-    comission: Quantity
+    pub order_id: String,
+    pub step: i32,
+    pub exchange_pair: ExchangePair,
+    pub side: TradeSide,
+    pub trade_type: TradeType,
+    pub quantity: Quantity,
+    pub price: f32,
+    pub commission: Quantity
 }
 
 impl TimeIndexed for Trade {}
@@ -49,7 +50,7 @@ impl Trade {
         trade_type: TradeType,
         quantity: Quantity,
         price: f32,
-        comission: Quantity
+        commission: Quantity
     ) -> Trade {
         Trade {
             order_id,
@@ -59,7 +60,7 @@ impl Trade {
             trade_type,
             quantity,
             price,
-            comission
+            commission
         }
     }
 }

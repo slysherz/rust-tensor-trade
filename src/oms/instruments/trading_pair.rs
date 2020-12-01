@@ -1,5 +1,5 @@
 use crate::ttcore::errors::TensorTradeError;
-use crate::oms::orders::instruments::Instrument;
+use crate::oms::instruments::Instrument;
 
 #[derive(PartialEq)]
 pub struct TradingPair {

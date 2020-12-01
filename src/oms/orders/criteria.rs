@@ -1,8 +1,8 @@
-use rust_decimal::prelude::*;
 use std::boxed::Box;
 use crate::oms::orders::order::Order;
 use crate::oms::orders::trade::*;
-use crate::oms::exchanges::exchange::Exchange;
+use crate::oms::exchanges::Exchange;
+use crate::ttcore::decimal::{ Decimal, FromPrimitive };
 #[derive(PartialEq)]
 pub enum StopDirection {
     Up,

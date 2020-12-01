@@ -1,3 +1,9 @@
-pub mod exchange_pair;
-pub mod trading_pair;
-pub mod quantity;
+mod exchange_pair;
+mod trading_pair;
+mod quantity;
+mod instruments;
+
+pub use exchange_pair::*;
+pub use trading_pair::*;
+pub use quantity::*;
+pub use instruments::*;

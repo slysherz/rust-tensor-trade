@@ -1,5 +1,5 @@
-use rust_decimal::prelude::*;
-use crate::oms::exchanges::exchange::Exchange;
+use crate::ttcore::decimal::Decimal;
+use crate::oms::exchanges::Exchange;
 use crate::oms::instruments::trading_pair::TradingPair;
 
 pub struct ExchangePair {

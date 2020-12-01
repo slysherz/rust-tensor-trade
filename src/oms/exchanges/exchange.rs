@@ -1,8 +1,10 @@
-use rust_decimal::prelude::*;
-use crate::oms::instruments::trading_pair::TradingPair;
 use std::collections::HashMap;
+use crate::ttcore::decimal::{ Decimal, FromPrimitive };
 use crate::ttcore::base::TimeIndexed;
-
+use crate::oms::{
+    orders::Order, 
+    instruments::TradingPair};
+    
 pub trait StreamLike {
     fn rename(&mut self, new_name: String);
     fn value(&self) -> f32;
@@ -57,5 +59,28 @@ impl Exchange {
 
         // Todo: consider type and rounding failures
         Decimal::from_f32(value).unwrap().round_dp(trading_pair.base.precision)
+    }
+
+    pub fn is_pair_tradable(&self, trading_pair: &TradingPair) -> bool {
+        // todo
+        false
+    }
+
+    pub fn execute_order(&self, order: Order, portfolio: ()) {
+        /*
+        let trade = self.service(
+            order,
+            portfolio.get_wallet(self.id, order.pair.base),
+            portfolio.get_wallet(self.id, order.pair.quote),
+            self.quote_price(order.pair),
+            self.options,
+            self.clock()
+        );
+
+        match trade {
+            Some(trade) => order.fill(trade),
+            _ => ()
+        }
+        */
     }
 }

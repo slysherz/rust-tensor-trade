@@ -1,9 +1,9 @@
-use crate::oms::instruments::exchange_pair::ExchangePair;
+use crate::oms::instruments::ExchangePair;
 use super::order::{Order, CriteriaLike};
 use super::trade::{TradeSide, TradeType};
 use crate::ttcore::base::TimeIndexed;
 
-struct OrderSpec {
+pub struct OrderSpec {
     id: String,
     side: TradeSide,
     trade_type: TradeType,

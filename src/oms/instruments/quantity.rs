@@ -1,13 +1,13 @@
-use rust_decimal::prelude::*;
-
+use std::ops;
+use crate::ttcore::decimal::{ Decimal, ToPrimitive };
 use crate::ttcore::errors::TensorTradeError;
-use crate::oms::instruments::exchange_pair::ExchangePair;
-use crate::oms::orders::instruments::Instrument;
+use crate::oms::instruments::{ ExchangePair, Instrument };
 
+#[derive(Debug)]
 pub struct Quantity {
-    instrument: Instrument,
-    size: Decimal,
-    path_id: String
+    pub instrument: Instrument,
+    pub size: Decimal,
+    pub path_id: String
 }
 
 impl Quantity {
@@ -29,6 +29,14 @@ impl Quantity {
                 size,
                 path_id
             })
+        }
+    }
+
+    pub fn clone(&self) -> Quantity {
+        Quantity { 
+            instrument: self.instrument.clone(),
+            size: self.size.clone(),
+            path_id: self.path_id.clone()
         }
     }
 
@@ -64,5 +72,59 @@ impl Quantity {
         }
     }
 
+    fn validate(left: Quantity, right: Quantity) -> Result<(Quantity, Quantity), TensorTradeError> {
+        if left.instrument != right.instrument {
+            return Err(TensorTradeError::IncompatibleInstrumentOperation{});
+        }
 
+        if left.path_id != "" && right.path_id != "" && left.path_id != right.path_id {
+            return Err(TensorTradeError::QuantityOpPathMismatch{});
+        }
+
+        if left.path_id != "" && right.path_id == "" {
+            return Ok((
+                Quantity { instrument: left.instrument, size: left.size, path_id: left.path_id.clone() },
+                Quantity { instrument: right.instrument, size: right.size, path_id: left.path_id }
+            ))
+        }
+
+        if left.path_id == "" && right.path_id != "" {
+            return Ok((
+                Quantity { instrument: left.instrument, size: left.size, path_id: right.path_id.clone() },
+                Quantity { instrument: right.instrument, size: right.size, path_id: right.path_id }
+            ))
+        }
+
+        Ok((left, right))
+    }
+
+    pub fn quantize(self) -> Quantity {
+        let precision = self.instrument.precision.clone();
+
+        Quantity {
+            instrument: self.instrument,
+            size: self.size.round_dp(precision),
+            path_id: self.path_id
+        }
+    }
+}
+
+impl ops::Add<Quantity> for Quantity {
+    type Output = Result<Quantity, TensorTradeError>;
+
+    fn add(self, other: Quantity) -> Result<Quantity, TensorTradeError> {
+        let (left, right) = Quantity::validate(self, other)?;
+        
+        Quantity::new(left.instrument, left.size + right.size, left.path_id)
+    }
+}
+
+impl ops::Sub<Quantity> for Quantity {
+    type Output = Result<Quantity, TensorTradeError>;
+
+    fn sub(self, other: Quantity) -> Result<Quantity, TensorTradeError> {
+        let (left, right) = Quantity::validate(self, other)?;
+        
+        Quantity::new(left.instrument, left.size - right.size, left.path_id)
+    }
 }

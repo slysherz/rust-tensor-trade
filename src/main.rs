@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-mod oms;
-mod ttcore;
+pub mod oms;
+pub mod ttcore;
 
 fn main() {
     /*
