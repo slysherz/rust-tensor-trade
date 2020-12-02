@@ -1,17 +1,20 @@
-use crate::ttcore::{base, errors::TensorTradeError, base::TimeIndexed};
-use crate::oms::instruments::{ Instrument, Quantity, ExchangePair };
-use crate::oms::orders::Order;
 use crate::oms::exchanges::Exchange;
-use crate::oms::wallets::{ Ledger, WalletLike };
-use crate::ttcore::decimal::Decimal;
+use crate::oms::instruments::{ExchangePair, Instrument, Quantity};
+use crate::oms::orders::Order;
+use crate::oms::wallets::{Ledger, WalletLike};
+use crate::ttcore::decimal::{Decimal, FromPrimitive};
+use crate::ttcore::{base::TimeIndexed, errors::TensorTradeError};
 use std::collections::HashMap;
 
-struct Wallet {
+pub type WalletTuple = (Exchange, Instrument, f32);
+
+#[derive(Debug)]
+pub struct Wallet {
     exchange: Exchange,
     initial_size: Decimal,
     instrument: Instrument,
-    balance: Quantity,
-    locked: HashMap<String, Decimal>
+    pub balance: Quantity,
+    locked: HashMap<String, Decimal>,
 }
 
 impl Wallet {
@@ -21,8 +24,57 @@ impl Wallet {
             initial_size: balance.size,
             instrument: balance.instrument.clone(),
             balance: balance.quantize(),
-            locked: HashMap::new()
+            locked: HashMap::new(),
         }
+    }
+
+    pub fn from_tuple((exchange, instrument, value): WalletTuple) -> Wallet {
+        Wallet::new(
+            exchange,
+            Quantity {
+                instrument: instrument,
+                size: Decimal::from_f32(value).unwrap(), // todo: avoid unwrap
+                path_id: "".to_string(),
+            },
+        )
+    }
+
+    pub fn lock(
+        &mut self,
+        quantity: Quantity,
+        order: Order,
+        reason: String,
+        ledger: &mut Ledger,
+    ) -> Result<(), TensorTradeError> {
+        if quantity.is_locked() {
+            return Err(TensorTradeError::DoubleLockedQuantity {});
+        }
+
+        if quantity > self.balance {
+            return Err(TensorTradeError::InsufficientFunds {});
+        }
+
+        self.balance = (&self.balance - &quantity)?;
+
+        let quantity = quantity.lock_for(order.path_id);
+
+        let new_value = match self.locked.get(&quantity.path_id) {
+            Some(value) => value + quantity.size,
+            None => quantity.size,
+        };
+
+        self.locked.insert(quantity.path_id.clone(), new_value);
+        self.balance = self.balance.quantize();
+
+        ledger.commit(
+            Box::new(self),
+            quantity,
+            format!("{}:{}/free", self.exchange.name, self.instrument),
+            format!("{}:{}/locked", self.exchange.name, self.instrument),
+            format!("LOCK ({})", reason),
+        );
+
+        Ok(())
     }
 }
 
@@ -32,6 +84,7 @@ impl WalletLike for Wallet {
     }
 
     fn locked_balance(&self) -> Quantity {
+        // todo: confirm that all quantities have the same resource
         let mut locked_balance = Decimal::new(0, 0);
 
         for (_, quantity) in &self.locked {
@@ -41,8 +94,14 @@ impl WalletLike for Wallet {
         Quantity::new(self.instrument.clone(), locked_balance, "".to_string()).unwrap()
     }
 
-    fn locked<'a>(&'a self, key: &String) -> Option<&'a Decimal> {
-        self.locked.get(key)
+    fn locked(&self, key: &String) -> Option<Quantity> {
+        let size = self.locked.get(key)?;
+
+        Some(Quantity {
+            instrument: self.instrument.clone(),
+            size: size.clone(),
+            path_id: key.clone(),
+        })
     }
 
     fn is_locked(&self, key: &String) -> bool {

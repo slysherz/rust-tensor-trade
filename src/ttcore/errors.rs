@@ -4,7 +4,9 @@
 pub enum TensorTradeError {
     // QUANTITY EXCEPTIONS
     /// Raised when a `Quantity` tries to be instantiated with a negative amount
-    InvalidNegativeQuantity { size: f32 },
+    InvalidNegativeQuantity {
+        size: f32,
+    },
 
     /// Raised when a `Quantity` tries to be instantiated with a value that is not numeric
     InvalidNonNumericQuantity {},
@@ -30,12 +32,14 @@ pub enum TensorTradeError {
     // ORDER EXCEPTIONS
     /// Raised when an `Order` with a non-negative amount is placed
     InvalidOrderQuantity {},
+    DoubleCancelOrder {},
 
     // WALLET EXCEPTIONS
     /// Raised when requested funds are greater than the free balance of a `Wallet`
     InsufficientFunds {},
+    WalletNotFound {},
 
     // TRADING PAIR EXCEPTIONS
     /// Raised when an invalid trading pair is trying to be created
-    InvalidTradingPair {}
+    InvalidTradingPair {},
 }

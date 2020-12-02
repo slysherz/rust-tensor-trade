@@ -1,6 +1,6 @@
-use crate::oms::instruments::ExchangePair;
-use super::order::{Order, CriteriaLike};
+use super::order::{CriteriaLike, Order};
 use super::trade::{TradeSide, TradeType};
+use crate::oms::instruments::ExchangePair;
 use crate::ttcore::base::TimeIndexed;
 
 pub struct OrderSpec {
@@ -8,7 +8,7 @@ pub struct OrderSpec {
     side: TradeSide,
     trade_type: TradeType,
     exchange_pair: ExchangePair,
-    criteria: Box<dyn CriteriaLike>
+    criteria: Box<dyn CriteriaLike>,
 }
 
 impl OrderSpec {
@@ -16,26 +16,24 @@ impl OrderSpec {
         let price = self.exchange_pair.price();
         let wallet_instrument = self.side.instrument(&self.exchange_pair.pair);
         let exchange = &self.exchange_pair.exchange;
-        // let wallet = order.portfolio.get_wallet(id, wallet_instrument);
+        let wallet = order.portfolio.get_wallet(&exchange.id, wallet_instrument);
 
-        
-        match None { // wallet.locked.get(order.path_id, None) {
+        match None {
+            // wallet.locked.get(order.path_id, None) {
             None => return None,
-            Some(quantity) => {
-                Order::new(
-                    exchange.clock().step,
-                    self.side,
-                    self.trade_type,
-                    self.exchange_pair,
-                    quantity,
-                    // order.portfolio,
-                    price,
-                    self.criteria,
-                    order.path_id,
-                    None,
-                    order.end,
-                )
-            }
+            Some(quantity) => Order::new(
+                exchange.clock().step,
+                self.side,
+                self.trade_type,
+                self.exchange_pair,
+                quantity,
+                order.portfolio,
+                price,
+                self.criteria,
+                order.path_id,
+                None,
+                order.end,
+            ),
         }
     }
 }
