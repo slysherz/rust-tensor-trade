@@ -1,18 +1,19 @@
-use crate::oms::orders::OrderListener;
-use crate::oms::wallets::Ledger;
-use crate::oms::wallets::{Wallet, WalletTuple};
-use crate::oms::{
-    instruments::{ExchangePair, Instrument, Quantity},
-    orders::default_order_listener,
+use std::{collections::HashMap, rc::Rc};
+
+use crate::{
+    oms::{
+        instruments::{Instrument, Quantity},
+        orders::{default_order_listener, OrderListener},
+    },
+    ttcore::{clock::Clock, decimal::Decimal, errors::TensorTradeError},
 };
-use crate::ttcore::decimal::Decimal;
-use crate::{oms::exchanges::Exchange, ttcore::errors::TensorTradeError};
-use std::collections::HashMap;
+
+use super::{Wallet, WalletTuple};
 
 /// Auxiliary struct in Portfolio. We use it so that we can perform some operations with wallets
 /// before the entire portfolio is built
 #[derive(Debug)]
-struct Wallets(HashMap<(String, String), Wallet>);
+pub struct Wallets(HashMap<(String, String), Wallet>);
 
 impl Wallets {
     fn new() -> Wallets {
@@ -31,11 +32,13 @@ impl Wallets {
         Ok(balance)
     }
 
-    fn add(&mut self, wallet: WalletTuple) {
+    fn add(&mut self, wallet: WalletTuple) -> Result<(), TensorTradeError> {
         let (exchange, instrument, _) = &wallet;
         let key = (exchange.id.clone(), instrument.symbol.clone());
 
-        self.0.insert(key, Wallet::from_tuple(wallet));
+        self.0.insert(key, Wallet::from_tuple(wallet)?);
+
+        Ok(())
     }
 
     fn remove(&mut self, wallet: WalletTuple) {
@@ -58,11 +61,12 @@ pub fn default_performance_listener() -> Box<dyn PerformanceListener> {
 
 #[derive(Debug)]
 pub struct Portfolio {
-    base_instrument: Instrument,
+    pub clock: Rc<Clock>,
+    pub base_instrument: Instrument,
     order_listener: Box<dyn OrderListener>,
     performance_listener: Box<dyn PerformanceListener>,
-    wallets: Wallets,
-    initial_balance: Quantity,
+    pub wallets: Wallets,
+    pub initial_balance: Quantity,
     // initial_net_worth:,
     // net_worth
     // performance
@@ -79,12 +83,13 @@ impl Portfolio {
         let mut wallets_s = Wallets::new();
 
         for wallet in wallets {
-            wallets_s.add(wallet);
+            wallets_s.add(wallet)?;
         }
 
         let initial_balance = wallets_s.balance(&base_instrument)?;
 
         let result = Portfolio {
+            clock: Rc::new(Clock::new()), // todo: figure out to pass a clock here
             base_instrument: base_instrument.clone(),
             order_listener: order_listener.unwrap_or(default_order_listener()),
             performance_listener: performance_listener.unwrap_or(default_performance_listener()),

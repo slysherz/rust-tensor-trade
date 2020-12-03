@@ -1,5 +1,4 @@
 use crate::oms::instruments::Quantity;
-use crate::ttcore::decimal::Decimal;
 
 pub struct Transaction {
     poid: String,

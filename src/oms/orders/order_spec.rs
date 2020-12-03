@@ -1,7 +1,13 @@
-use super::order::{CriteriaLike, Order};
-use super::trade::{TradeSide, TradeType};
-use crate::oms::instruments::ExchangePair;
+use super::{
+    order::{CriteriaLike, Order},
+    trade::{TradeSide, TradeType},
+    OrderParams,
+};
 use crate::ttcore::base::TimeIndexed;
+use crate::{
+    oms::{instruments::ExchangePair, wallets::WalletLike},
+    ttcore::errors::TensorTradeError,
+};
 
 pub struct OrderSpec {
     id: String,
@@ -12,28 +18,32 @@ pub struct OrderSpec {
 }
 
 impl OrderSpec {
-    pub fn create_order(self, order: Order) -> Option<Order> {
-        let price = self.exchange_pair.price();
+    pub fn create_order(self, order: Order) -> Result<Option<Order>, TensorTradeError> {
+        let price = self.exchange_pair.price()?;
         let wallet_instrument = self.side.instrument(&self.exchange_pair.pair);
         let exchange = &self.exchange_pair.exchange;
-        let wallet = order.portfolio.get_wallet(&exchange.id, wallet_instrument);
+        let wallet = match order.portfolio.get_wallet(&exchange.id, wallet_instrument) {
+            Some(wallet) => wallet,
+            None => return Ok(None),
+        };
 
-        match None {
-            // wallet.locked.get(order.path_id, None) {
-            None => return None,
-            Some(quantity) => Order::new(
-                exchange.clock().step,
-                self.side,
-                self.trade_type,
-                self.exchange_pair,
-                quantity,
-                order.portfolio,
-                price,
-                self.criteria,
-                order.path_id,
-                None,
-                order.end,
-            ),
-        }
+        let quantity = wallet
+            .locked(&order.path_id)
+            .ok_or(TensorTradeError::QuantityNotLocked {})?;
+
+        Order::new(OrderParams {
+            step: exchange.clock().step,
+            side: self.side,
+            trade_type: self.trade_type,
+            exchange_pair: self.exchange_pair,
+            quantity,
+            portfolio: order.portfolio,
+            price,
+            criteria: Some(self.criteria),
+            path_id: Some(order.path_id),
+            start: None,
+            end: order.end,
+        })
+        .map(|order| Some(order))
     }
 }

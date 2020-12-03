@@ -1,19 +1,15 @@
-use crate::ttcore::decimal::Decimal;
 use crate::oms::exchanges::Exchange;
 use crate::oms::instruments::trading_pair::TradingPair;
+use crate::ttcore::{decimal::Decimal, errors::TensorTradeError};
 
 pub struct ExchangePair {
     pub id: String,
     pub exchange: Exchange,
-    pub pair: TradingPair
+    pub pair: TradingPair,
 }
 
 impl ExchangePair {
-    pub fn price(&self) -> Decimal {
+    pub fn price(&self) -> Result<Decimal, TensorTradeError> {
         self.exchange.quote_price(&self.pair)
-    }
-
-    pub fn inverse_price(&self) {
-        // todo
     }
 }

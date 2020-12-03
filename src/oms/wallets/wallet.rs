@@ -1,8 +1,7 @@
 use crate::oms::exchanges::Exchange;
-use crate::oms::instruments::{ExchangePair, Instrument, Quantity};
-use crate::oms::orders::Order;
+use crate::oms::instruments::{Instrument, Quantity};
 use crate::oms::wallets::{Ledger, WalletLike};
-use crate::ttcore::decimal::{Decimal, FromPrimitive};
+use crate::ttcore::decimal::{decimal_from_f32, Decimal};
 use crate::ttcore::{base::TimeIndexed, errors::TensorTradeError};
 use std::collections::HashMap;
 
@@ -28,21 +27,23 @@ impl Wallet {
         }
     }
 
-    pub fn from_tuple((exchange, instrument, value): WalletTuple) -> Wallet {
-        Wallet::new(
+    pub fn from_tuple(
+        (exchange, instrument, value): WalletTuple,
+    ) -> Result<Wallet, TensorTradeError> {
+        Ok(Wallet::new(
             exchange,
             Quantity {
                 instrument: instrument,
-                size: Decimal::from_f32(value).unwrap(), // todo: avoid unwrap
+                size: decimal_from_f32(value)?,
                 path_id: "".to_string(),
             },
-        )
+        ))
     }
 
     pub fn lock(
         &mut self,
         quantity: Quantity,
-        order: Order,
+        path_id: String,
         reason: String,
         ledger: &mut Ledger,
     ) -> Result<(), TensorTradeError> {
@@ -56,7 +57,7 @@ impl Wallet {
 
         self.balance = (&self.balance - &quantity)?;
 
-        let quantity = quantity.lock_for(order.path_id);
+        let quantity = quantity.lock_for(path_id);
 
         let new_value = match self.locked.get(&quantity.path_id) {
             Some(value) => value + quantity.size,

@@ -1,20 +1,30 @@
-use crate::oms::instruments::{ExchangePair, Quantity, TradingPair};
-use crate::oms::orders::trade::{TradeSide, TradeType};
-use crate::oms::wallets::Portfolio;
-use crate::oms::{exchanges::Exchange, wallets::WalletLike};
-use crate::ttcore::{base::TimeIndexed, clock::Clock, decimal::Decimal, errors::TensorTradeError};
+use crate::{
+    oms::{
+        exchanges::Exchange,
+        instruments::TradingPair,
+        instruments::{ExchangePair, Quantity},
+        wallets::Portfolio,
+        wallets::WalletLike,
+    },
+    ttcore::{
+        base::{generate_id, TimeIndexed},
+        clock::Clock,
+        decimal::Decimal,
+        errors::TensorTradeError,
+    },
+};
 
-use super::trade::Trade;
+use super::{trade::Trade, TradeSide, TradeType};
 
 pub trait CriteriaLike {
     fn check(&self, _: Order, _: Exchange) -> bool;
 }
 
 pub trait OrderListener: std::fmt::Debug {
-    fn on_execute(&self, order: &Order) {}
-    fn on_cancel(&self, order: &Order) {}
-    fn on_fill(&self, order: &Order, trade: &Trade) {}
-    fn on_complete(&self, order: &Order) {}
+    fn on_execute(&self, _: &Order) {}
+    fn on_cancel(&self, _: &Order) {}
+    fn on_fill(&self, _: &Order, _: &Trade) {}
+    fn on_complete(&self, _: &Order) {}
 }
 
 #[derive(Debug)]
@@ -23,7 +33,7 @@ struct DefaultOrderListener {}
 impl OrderListener for DefaultOrderListener {
     fn on_execute(&self, _: &Order) {}
     fn on_cancel(&self, _: &Order) {}
-    fn on_fill(&self, _: &Order, trade: &Trade) {}
+    fn on_fill(&self, _: &Order, _: &Trade) {}
     fn on_complete(&self, _: &Order) {}
 }
 
@@ -40,6 +50,20 @@ pub enum OrderStatus {
     Filled,
 }
 
+pub struct OrderParams {
+    pub step: i32,
+    pub side: TradeSide,
+    pub trade_type: TradeType,
+    pub exchange_pair: ExchangePair,
+    pub quantity: Quantity,
+    pub portfolio: Portfolio,
+    pub price: Decimal,
+    pub criteria: Option<Box<dyn CriteriaLike>>,
+    pub path_id: Option<String>,
+    pub start: Option<i32>,
+    pub end: Option<i32>,
+}
+
 pub struct Order {
     pub created_at: i32,
     pub step: i32,
@@ -50,7 +74,7 @@ pub struct Order {
     pub remaining: Quantity,
     pub portfolio: Portfolio,
     pub price: Decimal,
-    pub criteria: Box<dyn CriteriaLike>,
+    pub criteria: Option<Box<dyn CriteriaLike>>,
     pub path_id: String,
     pub start: i32,
     pub end: Option<i32>,
@@ -63,55 +87,50 @@ pub struct Order {
 impl TimeIndexed for Order {}
 
 impl Order {
-    pub fn new(
-        step: i32,
-        side: TradeSide,
-        trade_type: TradeType,
-        exchange_pair: ExchangePair,
-        quantity: Quantity,
-        portfolio: Portfolio,
-        price: Decimal,
-        criteria: Box<dyn CriteriaLike>,
-        path_id: String,
-        start: Option<i32>,
-        end: Option<i32>,
-    ) -> Option<Order> {
-        let wallet = portfolio.get_wallet(
-            &exchange_pair.exchange.id,
-            side.instrument(&exchange_pair.pair),
-        )?;
+    pub fn new(params: OrderParams) -> Result<Order, TensorTradeError> {
+        let path_id = params.path_id.unwrap_or(generate_id());
+
+        // We use the block to prove to the borrow checker that we only need to borrow portfolio to
+        // calculate quantity
+        let quantity = {
+            let wallet = params
+                .portfolio
+                .get_wallet(
+                    &params.exchange_pair.exchange.id,
+                    params.side.instrument(&params.exchange_pair.pair),
+                )
+                .ok_or(TensorTradeError::WalletNotFound {})?;
+
+            if wallet.is_locked(&path_id) {
+                params.quantity
+            } else {
+                params.quantity
+                // todo: get ledger in here
+                // order.quantity = wallet.lock(order.quantity, path_id, "LOCK FOR ORDER".to_string(), ledger)
+            }
+        };
 
         let order = Order {
             created_at: Clock::now(),
-            step,
-            side,
-            trade_type,
-            exchange_pair,
+            step: params.step,
+            side: params.side,
+            trade_type: params.trade_type,
+            exchange_pair: params.exchange_pair,
             quantity: quantity.clone(),
             remaining: quantity,
-            portfolio,
-            price,
-            criteria,
-            path_id,
-            start: start.unwrap_or(step.clone()),
-            end,
+            portfolio: params.portfolio,
+            price: params.price,
+            criteria: params.criteria,
+            path_id: path_id,
+            start: params.start.unwrap_or(params.step.clone()),
+            end: params.end,
             status: OrderStatus::Pending,
             specs: Vec::new(),
             trades: Vec::new(),
             listeners: Vec::new(),
         };
 
-        /*
-        let quantity = if wallet.is_locked(&order.path_id) {
-            quantity
-        } else {
-            // wallet.lock(quantity, order, "LOCK FOR ORDER".to_string(), ledger)
-        };
-
-        order.quantity = quantity;
-        */
-
-        Some(order)
+        Ok(order)
     }
 
     pub fn pair<'a>(&'a self) -> &'a TradingPair {

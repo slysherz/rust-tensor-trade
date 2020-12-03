@@ -1,4 +1,4 @@
-// @todo: add information for each exception type, need to know types
+// todo: add information for each exception type, need to know types
 
 #[derive(Debug)]
 pub enum TensorTradeError {
@@ -9,7 +9,9 @@ pub enum TensorTradeError {
     },
 
     /// Raised when a `Quantity` tries to be instantiated with a value that is not numeric
-    InvalidNonNumericQuantity {},
+    InvalidNonNumericQuantity {
+        value: f32,
+    },
 
     /// Raised when an operation tries to occur between quantities that are not under the same
     /// path_id.
@@ -42,4 +44,8 @@ pub enum TensorTradeError {
     // TRADING PAIR EXCEPTIONS
     /// Raised when an invalid trading pair is trying to be created
     InvalidTradingPair {},
+
+    // EXCHANGE EXCEPTIONS
+    PriceNotFound {},
+    StreamNotFound {},
 }

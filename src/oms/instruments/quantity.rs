@@ -49,20 +49,22 @@ impl Quantity {
         Quantity::new(self.instrument, self.size, path_id).unwrap()
     }
 
-    pub fn convert(self, exchange_pair: ExchangePair) -> Quantity {
-        if self.instrument == exchange_pair.pair.base {
+    pub fn convert(self, exchange_pair: ExchangePair) -> Result<Quantity, TensorTradeError> {
+        let quantity = if self.instrument == exchange_pair.pair.base {
             Quantity {
                 instrument: exchange_pair.pair.base.clone(),
-                size: self.size / exchange_pair.price(),
+                size: self.size / exchange_pair.price()?,
                 path_id: self.path_id,
             }
         } else {
             Quantity {
                 instrument: exchange_pair.pair.base.clone(),
-                size: self.size * exchange_pair.price(),
+                size: self.size * exchange_pair.price()?,
                 path_id: self.path_id,
             }
-        }
+        };
+
+        Ok(quantity)
     }
 
     pub fn free(self) -> Quantity {

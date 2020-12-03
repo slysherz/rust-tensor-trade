@@ -2,7 +2,7 @@ use crate::{
     oms::wallets::Wallet,
     ttcore::{
         clock::Clock,
-        decimal::{Decimal, FromPrimitive},
+        decimal::{decimal_from_f32, Decimal},
         errors::TensorTradeError,
     },
 };
@@ -88,17 +88,15 @@ impl Exchange {
         }
     }
 
-    pub fn quote_price(&self, trading_pair: &TradingPair) -> Decimal {
+    pub fn quote_price(&self, trading_pair: &TradingPair) -> Result<Decimal, TensorTradeError> {
         let stream_name = trading_pair.to_string();
-        let value = match self.price_streams.get(&stream_name) {
-            Some(stream) => stream.value(),
-            None => 0.0,
-        };
+        let value = self
+            .price_streams
+            .get(&stream_name)
+            .ok_or(TensorTradeError::PriceNotFound {})?
+            .value();
 
-        // Todo: consider type and rounding failures
-        Decimal::from_f32(value)
-            .unwrap()
-            .round_dp(trading_pair.base.precision)
+        Ok(decimal_from_f32(value)?.round_dp(trading_pair.base.precision))
     }
 
     pub fn is_pair_tradable(&self, trading_pair: &TradingPair) -> bool {
@@ -117,11 +115,13 @@ impl Exchange {
             .get_wallet(&self.id, &order.pair().quote)
             .ok_or(TensorTradeError::WalletNotFound {})?;
 
+        let price = self.quote_price(order.pair())?;
+
         let trade = self.service.execute_order(
             order,
             base_wallet,
             quote_wallet,
-            self.quote_price(order.pair()),
+            price,
             &self.options,
             self.clock(),
         );
