@@ -14,12 +14,12 @@ fn test_portfolio() -> Result<(), TensorTradeError> {
     impl ServiceLike for Service {
         fn execute_order(
             &self,
-            order: &Order,
-            base_wallet: &Wallet,
-            quote_wallet: &Wallet,
-            current_price: Decimal,
-            options: &ExchangeOptions,
-            clock: &Clock,
+            _: &Order,
+            _: &Wallet,
+            _: &Wallet,
+            _: Decimal,
+            _: &ExchangeOptions,
+            _: &Clock,
         ) -> Option<Trade> {
             None
         }
