@@ -12,7 +12,6 @@ use super::{Wallet, WalletTuple};
 
 /// Auxiliary struct in Portfolio. We use it so that we can perform some operations with wallets
 /// before the entire portfolio is built
-#[derive(Debug)]
 pub struct Wallets(HashMap<(String, String), Wallet>);
 
 impl Wallets {
@@ -59,7 +58,6 @@ pub fn default_performance_listener() -> Box<dyn PerformanceListener> {
     Box::new(DefaultPerformanceListener {})
 }
 
-#[derive(Debug)]
 pub struct Portfolio {
     pub clock: Rc<Clock>,
     pub base_instrument: Instrument,

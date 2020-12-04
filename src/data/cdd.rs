@@ -5,37 +5,35 @@ pub mod crypto_data_download {
 
     #[derive(Deserialize, Debug)]
     pub struct DefaultRecord {
-        unix_timestamp: String,
-        date: String,
-        // symbol: String,
-        open: f32,
-        high: f32,
-        low: f32,
-        close: f32,
-        volume: f32,
+        pub unix_timestamp: String,
+        pub date: String,
+        pub open: f32,
+        pub high: f32,
+        pub low: f32,
+        pub close: f32,
+        pub volume: f32,
     }
 
     #[derive(Deserialize, Debug)]
     pub struct DefaultRecordAll {
-        unix_timestamp: String,
-        date: String,
-        // symbol: String,
-        open: f32,
-        high: f32,
-        low: f32,
-        close: f32,
-        volume_quote: f32,
-        volume_base: f32,
+        pub unix_timestamp: String,
+        pub date: String,
+        pub open: f32,
+        pub high: f32,
+        pub low: f32,
+        pub close: f32,
+        pub volume_quote: f32,
+        pub volume_base: f32,
     }
 
     #[derive(Deserialize, Debug)]
     pub struct GeminiRecord {
-        date: String,
-        open: f32,
-        high: f32,
-        low: f32,
-        close: f32,
-        volume: f32,
+        pub date: String,
+        pub open: f32,
+        pub high: f32,
+        pub low: f32,
+        pub close: f32,
+        pub volume: f32,
     }
 
     fn rename_column(headers: StringRecord, from: String, to: String) -> StringRecord {

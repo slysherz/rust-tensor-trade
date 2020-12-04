@@ -16,9 +16,10 @@ use crate::{
 };
 use std::collections::HashMap;
 
-pub trait StreamLike: std::fmt::Debug {
+pub trait StreamLike: Iterator {
     fn rename(&mut self, new_name: String);
-    fn value(&self) -> f32;
+    fn name(&self) -> String;
+    fn value(&self) -> Option<Self::Item>;
 }
 
 pub trait ServiceLike: std::fmt::Debug {
@@ -62,13 +63,12 @@ impl ExchangeOptions {
     }
 }
 
-#[derive(Debug)]
 pub struct Exchange {
     pub id: String,
     pub name: String,
     pub service: Box<dyn ServiceLike>,
     pub options: ExchangeOptions,
-    pub price_streams: HashMap<String, Box<dyn StreamLike>>,
+    pub price_streams: HashMap<String, Box<dyn StreamLike<Item = f32>>>,
     pub start: i32,
     pub step: i32,
 }
@@ -76,8 +76,13 @@ pub struct Exchange {
 impl TimeIndexed for Exchange {}
 
 impl Exchange {
-    pub fn new(name: String, service: Box<dyn ServiceLike>, options: ExchangeOptions) -> Exchange {
-        Exchange {
+    pub fn new(
+        name: String,
+        service: Box<dyn ServiceLike>,
+        options: ExchangeOptions,
+        streams: Vec<Box<dyn StreamLike<Item = f32>>>,
+    ) -> Exchange {
+        let mut result = Exchange {
             id: generate_id(),
             name,
             service,
@@ -85,7 +90,13 @@ impl Exchange {
             price_streams: HashMap::new(),
             start: 0,
             step: 0,
+        };
+
+        for stream in streams {
+            result.price_streams.insert(stream.name(), stream);
         }
+
+        result
     }
 
     pub fn quote_price(&self, trading_pair: &TradingPair) -> Result<Decimal, TensorTradeError> {
@@ -94,7 +105,8 @@ impl Exchange {
             .price_streams
             .get(&stream_name)
             .ok_or(TensorTradeError::PriceNotFound {})?
-            .value();
+            .value()
+            .ok_or(TensorTradeError::PriceNotFound {})?;
 
         Ok(decimal_from_f32(value)?.round_dp(trading_pair.base.precision))
     }

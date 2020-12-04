@@ -1,5 +1,8 @@
 #![allow(dead_code)]
-use rust_tensortrade::feed::{BasicStream, Group, Stream};
+use rust_tensortrade::{
+    feed::{Group, Stream},
+    oms::exchanges::StreamLike,
+};
 
 #[test]
 fn test_streams() {

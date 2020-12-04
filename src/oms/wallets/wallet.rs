@@ -7,7 +7,6 @@ use std::collections::HashMap;
 
 pub type WalletTuple = (Exchange, Instrument, f32);
 
-#[derive(Debug)]
 pub struct Wallet {
     exchange: Exchange,
     initial_size: Decimal,
