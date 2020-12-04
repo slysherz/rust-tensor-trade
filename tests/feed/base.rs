@@ -9,7 +9,9 @@ fn test_streams() {
     stream_a.rename("STREAM_A".to_string());
     stream_b.rename("STREAM_B".to_string());
 
-    let group = Group::new(Vec::from([stream_a, stream_b]));
+    let mapped = Stream::apply(stream_a, |n| n * 2);
+
+    let group = Group::new(Vec::from([mapped, stream_b]));
 
     for i in group {
         println!("{:?}", i);

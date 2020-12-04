@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-fn default_name() -> String {
+pub fn default_name() -> String {
     "generic".to_string()
 }
 
@@ -9,12 +9,12 @@ pub trait BasicStream: Iterator {
     fn name(&self) -> String;
 }
 
-pub struct Constant<S: Copy> {
+pub struct Constant<S: Clone> {
     value: S,
     name: String,
 }
 
-impl<S: Copy> Constant<S> {
+impl<S: Clone> Constant<S> {
     pub fn new(value: S) -> Constant<S> {
         Constant {
             name: default_name(),
@@ -23,15 +23,15 @@ impl<S: Copy> Constant<S> {
     }
 }
 
-impl<S: Copy> Iterator for Constant<S> {
+impl<S: Clone> Iterator for Constant<S> {
     type Item = S;
 
     fn next(&mut self) -> Option<S> {
-        Some(self.value)
+        Some(self.value.clone())
     }
 }
 
-impl<S: Copy> BasicStream for Constant<S> {
+impl<S: Clone> BasicStream for Constant<S> {
     fn rename(&mut self, name: String) {
         self.name = name;
     }
@@ -42,13 +42,13 @@ impl<S: Copy> BasicStream for Constant<S> {
 
 pub struct Stream<'a, S>
 where
-    S: Copy + 'a,
+    S: Clone + 'a,
 {
     it: Box<dyn Iterator<Item = S> + 'a>,
     name: String,
 }
 
-impl<'a, S: Copy> Stream<'a, S> {
+impl<'a, S: Clone> Stream<'a, S> {
     pub fn new<T>(it: T) -> Stream<'a, S>
     where
         T: Iterator<Item = S> + 'a,
@@ -70,7 +70,7 @@ impl<'a, S: Copy> Stream<'a, S> {
     }
 }
 
-impl<'a, S: Copy> Iterator for Stream<'a, S> {
+impl<'a, S: Clone> Iterator for Stream<'a, S> {
     type Item = S;
 
     fn next(&mut self) -> Option<S> {
@@ -78,7 +78,7 @@ impl<'a, S: Copy> Iterator for Stream<'a, S> {
     }
 }
 
-impl<'a, S: Copy> BasicStream for Stream<'a, S> {
+impl<'a, S: Clone> BasicStream for Stream<'a, S> {
     fn rename(&mut self, name: String) {
         self.name = name;
     }
@@ -89,13 +89,13 @@ impl<'a, S: Copy> BasicStream for Stream<'a, S> {
 
 pub struct Group<'a, S>
 where
-    S: Copy,
+    S: Clone,
 {
     streams: HashMap<String, Box<dyn BasicStream<Item = S> + 'a>>,
     name: String,
 }
 
-impl<'a, S: Copy> Group<'a, S> {
+impl<'a, S: Clone> Group<'a, S> {
     pub fn new<T>(streams: Vec<T>) -> Group<'a, S>
     where
         T: BasicStream<Item = S> + 'a,
@@ -113,7 +113,7 @@ impl<'a, S: Copy> Group<'a, S> {
     }
 }
 
-impl<'a, S: Copy> Iterator for Group<'a, S> {
+impl<'a, S: Clone> Iterator for Group<'a, S> {
     type Item = HashMap<String, Option<S>>;
 
     fn next(&mut self) -> Option<HashMap<String, Option<S>>> {
@@ -137,7 +137,7 @@ impl<'a, S: Copy> Iterator for Group<'a, S> {
     }
 }
 
-impl<'a, S: Copy> BasicStream for Group<'a, S> {
+impl<'a, S: Clone> BasicStream for Group<'a, S> {
     fn rename(&mut self, name: String) {
         self.name = name;
     }
